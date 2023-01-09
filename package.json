@@ -1,7 +1,7 @@
 {
   "name": "@suez/ngx-dnd",
   "description": "Angular X Drag-and-Drop",
-  "version": "13.0.2-rc.2",
+  "version": "13.0.2",
   "scripts": {
     "build": "ng build --configuration production",
     "test": "ng test"
