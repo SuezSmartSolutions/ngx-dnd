@@ -1,12 +1,9 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
-
-name: Publish package into npm
+name: Update version and publish release packages
 
 on:
   pull_request:
-    types:
-      - closed
+    types: closed
+    branches: release/**
   workflow_dispatch:
     inputs:
       number:
@@ -52,7 +49,7 @@ jobs:
             // Stop if Pull Request branch name does not start with `release`
             const branch = pullRequest.base.ref;
             if (!branch.startsWith('release')) {
-              core.info(`This is not a release branch ${branch}, skipping`);
+              core.info(`This is not targeting a release branch ${branch}, skipping`);
               return;
             }
             core.setOutput('branch', pullRequest.head.ref);
@@ -90,8 +87,9 @@ jobs:
               core.info(`Current version is already an rc ${json.version}`);
               return true;
            }
-           const newVersion = `${json.version}-rc.0`;
-           content = content.replace(json.version, newVersion);
+           
+           json.version = `${json.version}-rc.0`;
+           content = JSON.stringify(json, null, '  ');
            fs.writeFileSync('package.json', content, 'utf-8');
 
       - name: Set next version

@@ -1,0 +1,50 @@
+name: Publish package into npm and create tag
+
+on:
+  pull_request:
+    types: closed
+    branches: master
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Master
+        uses: actions/checkout@v2
+        with:
+          ref: 'master'
+          token: ${{ secrets.ACTIONS_GIT_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          registry-url: https://registry.npmjs.org/
+          node-version: 16
+
+      - name: Get current version
+        id: remove-suffix-version
+        uses: actions/github-script@v3
+        with:
+          script: |
+           const fs = require('fs');
+           let content = fs.readFileSync('package.json', 'utf-8');
+           const json = JSON.parse(content);
+           core.setOutput('version', json.version);
+
+      - name: Install package
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish package
+        run: cd dist && npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+
+      - name: Create version tag
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag v${{ steps.remove-suffix-version.outputs.version }}
+          git push --tags
