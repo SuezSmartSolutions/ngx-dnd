@@ -1,4 +1,4 @@
-import { inject, TestBed, ComponentFixture }
+import { inject, TestBed, ComponentFixture, fakeAsync, flush, tick }
     from '@angular/core/testing';
 
 import { DragDropConfig } from '../lib/dnd.config';
@@ -70,17 +70,19 @@ describe('Drag and Drop without draggable data', () => {
         done();
     });
 
-    it('Drop events should be activated on the same drop-zone', (done: any) => {
+    it('Drop events should be activated on the same drop-zone', fakeAsync(() => {
         let dragElemOne: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dragIdOne');
         let dropElemOne: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dropIdOne');
 
         triggerEvent(dragElemOne, 'dragstart', 'MouseEvent');
         triggerEvent(dropElemOne, 'dragenter', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElemOne.classList.contains(config.onDragEnterClass)).toEqual(true);
 
         triggerEvent(dropElemOne, 'dragover', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElemOne.classList.contains(config.onDragOverClass)).toEqual(true);
 
         let dragCount: number = 0, dropCount: number = 0;
@@ -100,20 +102,22 @@ describe('Drag and Drop without draggable data', () => {
         triggerEvent(dropElemOne, 'drop', 'MouseEvent');
         componentFixture.detectChanges();
 
-        done();
-    });
+        flush();
+    }));
 
-    it('Drop events on multiple drop-zone', (done: any) => {
+    it('Drop events on multiple drop-zone', fakeAsync(() => {
         let dragElemOneTwo: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dragIdOneTwo');
         let dropElemOneTwo: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dropIdOneTwo');
 
         triggerEvent(dragElemOneTwo, 'dragstart', 'MouseEvent');
         triggerEvent(dropElemOneTwo, 'dragenter', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElemOneTwo.classList.contains(config.onDragEnterClass)).toEqual(true);
 
         triggerEvent(dropElemOneTwo, 'dragover', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElemOneTwo.classList.contains(config.onDragOverClass)).toEqual(true);
 
         let dragCount: number = 0, dropCount: number = 0;
@@ -133,8 +137,8 @@ describe('Drag and Drop without draggable data', () => {
         triggerEvent(dropElemOneTwo, 'drop', 'MouseEvent');
         componentFixture.detectChanges();
 
-        done();
-    });
+        flush();
+    }));
 
 });
 

@@ -1,4 +1,4 @@
-import { inject, TestBed, ComponentFixture }
+import { inject, TestBed, ComponentFixture, tick, fakeAsync, flush }
     from '@angular/core/testing';
 
 import { DragDropConfig } from '../lib/dnd.config';
@@ -62,21 +62,23 @@ describe('Drag and Drop with draggable data', () => {
         done();
     });
 
-    it('Drag events should add/remove the expected classes to the target element', (done: any) => {
+    it('Drag events should add/remove the expected classes to the target element', fakeAsync(() => {
         let dragElem: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dragId');
 
         expect(dragElem.classList.contains(config.onDragStartClass)).toEqual(false);
 
         triggerEvent(dragElem, 'dragstart', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dragElem.classList.contains(config.onDragStartClass)).toEqual(true);
 
         triggerEvent(dragElem, 'dragend', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dragElem.classList.contains(config.onDragStartClass)).toEqual(false);
 
-        done();
-    });
+        flush();
+    }));
 
     it('Drag start event should not be activated if drag is not enabled', (done: any) => {
         container.dragEnabled = false;
@@ -95,7 +97,7 @@ describe('Drag and Drop with draggable data', () => {
         done();
     });
 
-    it('Drop events should add/remove the expected classes to the target element', (done: any) => {
+    it('Drop events should add/remove the expected classes to the target element', fakeAsync(() => {
         let dragElem: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dragId');
         let dropElem: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dropId');
 
@@ -105,21 +107,25 @@ describe('Drag and Drop with draggable data', () => {
         // The drop events should not work before a drag is started on an element with the correct drop-zone
         triggerEvent(dropElem, 'dragenter', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElem.classList.contains(config.onDragEnterClass)).toEqual(false);
 
         triggerEvent(dragElem, 'dragstart', 'MouseEvent');
         triggerEvent(dropElem, 'dragenter', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElem.classList.contains(config.onDragEnterClass)).toEqual(true);
         expect(dropElem.classList.contains(config.onDragOverClass)).toEqual(false);
 
         triggerEvent(dropElem, 'dragover', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElem.classList.contains(config.onDragEnterClass)).toEqual(true);
         expect(dropElem.classList.contains(config.onDragOverClass)).toEqual(true);
 
         triggerEvent(dropElem, 'dragleave', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElem.classList.contains(config.onDragEnterClass)).toEqual(false);
         expect(dropElem.classList.contains(config.onDragOverClass)).toEqual(false);
 
@@ -127,11 +133,12 @@ describe('Drag and Drop with draggable data', () => {
         triggerEvent(dropElem, 'dragenter', 'MouseEvent');
         triggerEvent(dropElem, 'drop', 'MouseEvent');
         componentFixture.detectChanges();
+        tick(200);
         expect(dropElem.classList.contains(config.onDragEnterClass)).toEqual(false);
         expect(dropElem.classList.contains(config.onDragOverClass)).toEqual(false);
 
-        done();
-    });
+        flush();
+    }));
 
     it('Drop event should activate the onDropSuccess and onDragSuccess callbacks', (done: any) => {
         let dragElem: HTMLElement = componentFixture.elementRef.nativeElement.querySelector('#dragId');
