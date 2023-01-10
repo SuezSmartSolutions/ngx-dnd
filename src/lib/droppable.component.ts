@@ -2,15 +2,24 @@
 // This project is licensed under the terms of the MIT license.
 // https://github.com/akserg/ng2-dnd
 
-import { ChangeDetectorRef, NgZone, Renderer2 } from '@angular/core';
+import { ChangeDetectorRef, NgZone, OnDestroy, Renderer2 } from '@angular/core';
 import { Directive, Input, Output, EventEmitter, ElementRef } from '@angular/core';
+import { auditTime, Subject, takeUntil } from 'rxjs';
 
 import { AbstractComponent } from './abstract.component';
 import { DragDropAllowedOperation, DragDropConfig } from './dnd.config';
 import { DragDropService, DragDropData } from './dnd.service';
 
+interface ModifyClassEvent {
+    operation: 'add' | 'remove';
+    element: HTMLElement;
+    classNames: string[];
+}
+
 @Directive({ selector: '[dnd-droppable]' })
-export class DroppableComponent extends AbstractComponent {
+export class DroppableComponent extends AbstractComponent implements OnDestroy {
+    private destroyed = new Subject<void>();
+    private modifyClassSubject = new Subject<ModifyClassEvent>();
 
     @Input("dropEnabled") set droppable(value: boolean) {
         this.dropEnabled = !!value;
@@ -58,26 +67,44 @@ export class DroppableComponent extends AbstractComponent {
         super(elemRef, dragDropService, config, cdr, renderer, zone);
 
         this.dropEnabled = true;
+
+        this.modifyClassSubject
+            .pipe(takeUntil(this.destroyed), auditTime(100))
+            .subscribe(event => event.classNames
+                .forEach(className => this.renderer[`${event.operation}Class`](event.element, className)));
+    }
+
+    private addClass(element: HTMLElement, ...classNames: string[]) {
+        this.modifyClassSubject.next({ operation: 'add', element, classNames });
+    }
+
+    private removeClass(element: HTMLElement, ...classNames: string[]) {
+        this.modifyClassSubject.next({ operation: 'remove', element, classNames });
+    }
+
+    public override ngOnDestroy(): void {
+        super.ngOnDestroy();
+        this.destroyed.next();
+        this.destroyed.complete();
     }
 
     override _onDragEnterCallback(event: MouseEvent) {
         if (this._dragDropService.isDragged) {
-            this.renderer.addClass(this._elem, this._config.onDragEnterClass);
+            this.addClass(this._elem, this._config.onDragEnterClass);
             this.onDragEnter.emit({ dragData: this._dragDropService.dragData, mouseEvent: event });
         }
     }
 
     override _onDragOverCallback(event: MouseEvent) {
         if (this._dragDropService.isDragged) {
-            this.renderer.addClass(this._elem, this._config.onDragOverClass);
+            this.addClass(this._elem, this._config.onDragOverClass);
             this.onDragOver.emit({ dragData: this._dragDropService.dragData, mouseEvent: event });
         }
     };
 
     override _onDragLeaveCallback(event: MouseEvent) {
         if (this._dragDropService.isDragged) {
-            this.renderer.removeClass(this._elem, this._config.onDragOverClass);
-            this.renderer.removeClass(this._elem, this._config.onDragEnterClass);
+            this.removeClass(this._elem, this._config.onDragOverClass, this._config.onDragEnterClass);
             this.onDragLeave.emit({ dragData: this._dragDropService.dragData, mouseEvent: event });
         }
     };
@@ -89,8 +116,9 @@ export class DroppableComponent extends AbstractComponent {
             if (this._dragDropService.onDragSuccessCallback) {
                 this._dragDropService.onDragSuccessCallback.emit({ dragData: this._dragDropService.dragData, mouseEvent: event });
             }
-            this.renderer.removeClass(this._elem, this._config.onDragOverClass);
-            this.renderer.removeClass(this._elem, this._config.onDragEnterClass);
+            this.removeClass(this._elem, this._config.onDragOverClass, this._config.onDragEnterClass);
+
         }
     }
 }
+
